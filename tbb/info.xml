@@ -1,0 +1,10 @@
+<VidaliaPlugin>
+  <name>Browser Bundle Configuration</name>
+  <date>15/06/2011</date>
+  <author>chiiph</author>
+  <type persistent="true" gui="true" />
+  <files>
+    <file>tbb.js</file>
+  </files>
+  <namespace>tbb</namespace>
+</VidaliaPlugin>
