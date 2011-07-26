@@ -5,14 +5,16 @@ importExtension("qt.uitools");
 
 var tbb = {
   BrowserExecutable: "BrowserExecutable",
-  ProxyExecutable: "ProxyExecutable",
   BrowserDirectory: "BrowserDirectory",
-  RunProxyAtStart: "RunProxyAtStart",
-  ProxyExecutableArguments: "ProxyExecutableArguments",
+//  We don't want polipo anymore?
+//  ProxyExecutable: "ProxyExecutable",
+//  RunProxyAtStart: "RunProxyAtStart",
+//  ProxyExecutableArguments: "ProxyExecutableArguments",
 
   start: function() {
     vdebug("TBB@start");
-    this.tab = new VidaliaTab("Browser Bundle Settings", "TBB");
+    vdebug(QProcess.NotRunning);
+    this.tab = new VidaliaTab("Browser Bundle Settings", "TBB"); // We need this to access the settings later
     this.browserProcess = new HelperProcess();
     this.proxyProcess = new HelperProcess();
 
@@ -22,15 +24,18 @@ var tbb = {
     this.proxyProcess['finished(int, QProcess::ExitStatus)'].connect(this, this.onSubProcessFinished);
 
     torControl["authenticated()"].connect(this, this.startSubProcess);
-//    this.timer = new QTimer();
-//    this.timer["timeout()"].connect(this, this.timeout);
-//    this.timer.start(10);
+    // Show a popup when tor's started so that users wait for the new
+    // Firefox, so that they don't open a firefox themselves and think they
+    // are using tor when they are not?
+    //torControl["started()"].connect(this, this.showWaitDialog);
   },
 
   buildGUI: function() {
     vdebug("TBB@buildGUI");
     // Load the GUI file
-    var file = new QFile(pluginPath+"/tbb/gui.ui");
+    this.tab = new VidaliaTab("Browser Bundle Settings", "TBB");
+
+    var file = new QFile(pluginPath+"/tbb/tbb.ui");
     var loader = new QUiLoader(this.tab);
     file.open(QIODevice.ReadOnly);
     this.widget = loader.load(file);
@@ -39,18 +44,55 @@ var tbb = {
     this.tab.setLayout(layout);
     file.close();
 
-    var btnRun = findWidget(this.widget, "btnRun");
-    if(btnRun != null) {
-      btnRun["clicked()"].connect(this, this.clicked);
+    var groupBox = this.widget.children()[findWidget(this.widget, "groupBox")];
+    if(groupBox == null) {
+      return this.tab;
+    }
+
+    this.btnSave = groupBox.children()[findWidget(groupBox, "btnSave")];
+    if(this.btnSave != null) {
+      this.btnSave["clicked()"].connect(this, this.saveSettings);
+    }
+
+    this.btnLaunch = groupBox.children()[findWidget(groupBox, "btnLaunch")];
+    if(this.btnLaunch != null) {
+      this.btnLaunch["clicked()"].connect(this, this.startSubProcess);
+    }
+
+    this.btnExecutable = groupBox.children()[findWidget(groupBox, "btnExecutable")];
+    if(this.btnExecutable != null) {
+      this.btnExecutable["clicked()"].connect(this, this.showExecDialog);
+    }
+
+    this.btnDirectory = groupBox.children()[findWidget(groupBox, "btnDirectory")];
+    if(this.btnDirectory != null) {
+      this.btnDirectory["clicked()"].connect(this, this.showDirDialog);
+    }
+
+    /****************************/
+
+    this.lineExecutable = groupBox.children()[findWidget(groupBox, "lineExecutable")];
+    if(this.lineExecutable != null) {
+      this.lineExecutable.text = this.tab.getSetting(this.BrowserExecutable, "");
+    }
+    
+    this.lineDirectory = groupBox.children()[findWidget(groupBox, "lineDirectory")];
+    if(this.lineDirectory != null) {
+      this.lineDirectory.text = this.tab.getSetting(this.BrowserDirectory, "");
     }
 
     return this.tab;
   },
 
+  saveSettings: function() {
+    this.tab.saveSetting(this.BrowserExecutable, this.lineExecutable.text);
+    this.tab.saveSetting(this.BrowserDirectory, this.lineDirectory.text);
+  },
+
   onSubProcessFinished: function(exitCode, exitStatus) {
     vdebug("TBB@onSubProcessFinished");
-    var browserExecutable = this.tab.getSetting(this.BrowserExecutable, "");
-    var browserDirectory = this.tab.getSetting(this.BrowserDirectory, "");
+    var browserExecutable = this.tab.getSetting(this.BrowserExecutable, "").toString();
+    var browserDirectory = this.tab.getSetting(this.BrowserDirectory, "").toString();
 
     var browserDone = (browserExecutable == "" && browserDirectory == "") 
                       || this.browserProcess.isDone();
@@ -59,13 +101,17 @@ var tbb = {
       vdebug("TBB@BrowserDone");
       if (browserDirectory == "") {
         vdebug("TBB@BrowserDirectory empty");
-        vidaliaApp.quit();
+//        We don't want to quit, we can re-launch the browser now, yay!
+//        vidaliaApp.quit();
       } else {
+//        So this is useless too
 //        QTimer *browserWatcher = new QTimer(this);
 //        connect(browserWatcher, SIGNAL(timeout()), this, SLOT(onCheckForBrowser()));
 //        browserWatcher->start(2000);
       }
     }
+
+    this.btnLaunch.enabled = true;
   },
 
   onBrowserFailed: function(msg) {
@@ -82,28 +128,29 @@ var tbb = {
                       QMessageBox.Ok);
   },
 
+  // Not used right now
   onCheckForBrowser: function() {
     vdebug("TBB@onCheckBrowser");
   },
 
   stop: function() {
     vdebug("TBB@stop");
-//  if (_proxyProcess->state() != QProcess::NotRunning) {
-//    /* Close the proxy server (Polipo ignores the WM_CLOSE event sent by
-//     * terminate() so we have to kill() it) */
-//    _proxyProcess->kill();
-//  }
+    if (this.proxyProcess.state() != QProcess.NotRunning) {
+      /* Close the proxy server (Polipo ignores the WM_CLOSE event sent by
+      * terminate() so we have to kill() it) */
+      this.proxyProcess.kill();
+    }
 //  /* Kill the browser and IM client if using the new launcher */
 //  VidaliaSettings vidalia_settings;
 
-//  if (! vidalia_settings.getBrowserDirectory().isEmpty()) {
+    if (this.tab.getSetting(this.BrowserDirectory, "") != "") {
 //    /* Disconnect the finished signals so that we won't try to exit Vidalia again */
 //    QObject::disconnect(_browserProcess, SIGNAL(finished(int, QProcess::ExitStatus)), 0, 0);
 //    QObject::disconnect(_imProcess, SIGNAL(finished(int, QProcess::ExitStatus)), 0, 0);
 
-//    /* Use QProcess terminate function */
-//    if (_browserProcess->state() == QProcess::Running)
-//      _browserProcess->terminate();
+      /* Use QProcess terminate function */
+      if (this.browserProcess.state() == QProcess.Running)
+        this.browserProcess.terminate();
 
 //#if defined(Q_OS_WIN)
 //    /* Kill any processes which might have been forked off */
@@ -112,7 +159,7 @@ var tbb = {
 
 //    if (_imProcess->state() == QProcess::Running)
 //      _imProcess->terminate();    
-//  }
+    }
   },
 
   launchBrowserFromDirectory: function() {
@@ -158,9 +205,17 @@ var tbb = {
 
   startSubProcess: function() {
     vdebug("TBB@startSubProcess");
+
+    vdebug("is it connected?");
+    if(!torControl.isConnected())
+      return;
+    vdebug("yes");
+
     while(!torControl.isCircuitEstablished()) {
       vdebug("Waiting on circuit established");
     }
+    vdebug("circuit established");
+
     var proxyExecutable = this.tab.getSetting(this.ProxyExecutable, "");
     var runAtStart = this.tab.getSetting(this.RunProxyAtStart, "");
     var proxyExecutableArguments = this.tab.getSetting(this.ProxyExecutableArguments, "");
@@ -182,6 +237,8 @@ var tbb = {
       this.browserProcess.setEnvironment(newenv);
       this.browserProcess.start(browserExecutable, "-no-remote");
     }
+
+    this.btnLaunch.enabled = false;
   },
 
   copy_dir: function(source, dest) {
@@ -217,11 +274,17 @@ var tbb = {
           return false;
       } 
       /* Ignore special files (e.g. symlinks, devices) */
-
     }
     return true;
   },
     
+  showDirDialog: function() {
+    print("tbb@showDirDialog");
+    this.lineDirectory.text = QFileDialog.getExistingDirectory(this, "Choose a directory...", "/", QFileDialog.ShowDirsOnly);
+  },
 
+  showExecDialog: function() {
+    print("tbb@showExecDialog");
+    this.lineExecutable.text = QFileDialog.getOpenFileName(this, "Choose a directory...", "/");
+  },
 };
-
