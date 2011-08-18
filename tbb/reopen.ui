@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>Dialog</class>
+ <widget class="QDialog" name="Dialog">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>529</width>
+    <height>169</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Dialog</string>
+  </property>
+  <layout class="QGridLayout" name="gridLayout">
+   <item row="0" column="0" colspan="4">
+    <widget class="QLabel" name="lblInfo">
+     <property name="text">
+      <string>The Tor enabled Firefox was closed. What do you want to do?
+
+If you choose &quot;Do nothing&quot;, you can go to the menu Plugins-&gt;Browser Bundle Configuration and reopen the browser from there.</string>
+     </property>
+     <property name="wordWrap">
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="1">
+    <widget class="QPushButton" name="btnReopen">
+     <property name="text">
+      <string>Reopen the browser</string>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="2">
+    <widget class="QPushButton" name="btnClose">
+     <property name="text">
+      <string>Close Tor</string>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="3">
+    <widget class="QPushButton" name="btnDoNothing">
+     <property name="text">
+      <string>Do nothing</string>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="0">
+    <spacer name="horizontalSpacer">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>40</width>
+       <height>20</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+   <item row="1" column="0" colspan="4">
+    <widget class="QCheckBox" name="chkShowAgain">
+     <property name="text">
+      <string>Don't show this dialog next time</string>
+     </property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <tabstops>
+  <tabstop>btnDoNothing</tabstop>
+  <tabstop>btnClose</tabstop>
+  <tabstop>btnReopen</tabstop>
+ </tabstops>
+ <resources/>
+ <connections>
+  <connection>
+   <sender>btnClose</sender>
+   <signal>clicked()</signal>
+   <receiver>Dialog</receiver>
+   <slot>close()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>228</x>
+     <y>167</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>200</x>
+     <y>93</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>btnDoNothing</sender>
+   <signal>clicked()</signal>
+   <receiver>Dialog</receiver>
+   <slot>close()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>338</x>
+     <y>167</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>200</x>
+     <y>93</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>btnReopen</sender>
+   <signal>clicked()</signal>
+   <receiver>Dialog</receiver>
+   <slot>close()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>90</x>
+     <y>167</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>200</x>
+     <y>93</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+</ui>
