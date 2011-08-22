@@ -7,47 +7,47 @@
     <x>0</x>
     <y>0</y>
     <width>513</width>
-    <height>300</height>
+    <height>392</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Form</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="0" column="1">
+   <item row="1" column="0" colspan="2">
     <widget class="QGroupBox" name="browserBox">
      <property name="title">
       <string>Browser Configuration</string>
      </property>
      <layout class="QGridLayout" name="gridLayout_2">
-      <item row="1" column="1" colspan="3">
+      <item row="2" column="1" colspan="3">
        <widget class="QLineEdit" name="lineExecutable"/>
       </item>
-      <item row="2" column="1" colspan="3">
+      <item row="3" column="1" colspan="3">
        <widget class="QLineEdit" name="lineDirectory"/>
       </item>
-      <item row="1" column="4">
+      <item row="2" column="4">
        <widget class="QPushButton" name="btnExecutable">
         <property name="text">
          <string>...</string>
         </property>
        </widget>
       </item>
-      <item row="2" column="4">
+      <item row="3" column="4">
        <widget class="QPushButton" name="btnDirectory">
         <property name="text">
          <string>...</string>
         </property>
        </widget>
       </item>
-      <item row="3" column="3">
+      <item row="4" column="3">
        <widget class="QPushButton" name="btnLaunch">
         <property name="text">
          <string>Launch Browser</string>
         </property>
        </widget>
       </item>
-      <item row="3" column="2">
+      <item row="4" column="2">
        <spacer name="horizontalSpacer">
         <property name="orientation">
          <enum>Qt::Horizontal</enum>
@@ -60,7 +60,7 @@
         </property>
        </spacer>
       </item>
-      <item row="2" column="0">
+      <item row="3" column="0">
        <widget class="QLabel" name="lblDirectory">
         <property name="text">
          <string>Directory:</string>
@@ -70,7 +70,7 @@
         </property>
        </widget>
       </item>
-      <item row="1" column="0">
+      <item row="2" column="0">
        <widget class="QLabel" name="lblExecutable">
         <property name="text">
          <string>Executable:</string>
@@ -80,17 +80,10 @@
         </property>
        </widget>
       </item>
-      <item row="3" column="1">
-       <widget class="QPushButton" name="btnSave">
-        <property name="text">
-         <string>Save</string>
-        </property>
-       </widget>
-      </item>
      </layout>
     </widget>
    </item>
-   <item row="2" column="1">
+   <item row="5" column="1">
     <spacer name="verticalSpacer">
      <property name="orientation">
       <enum>Qt::Vertical</enum>
@@ -103,7 +96,7 @@
      </property>
     </spacer>
    </item>
-   <item row="1" column="1">
+   <item row="2" column="0" colspan="2">
     <widget class="QGroupBox" name="closeActionBox">
      <property name="title">
       <string>Browser close action</string>
@@ -113,6 +106,86 @@
        <widget class="QCheckBox" name="chkShowDialog">
         <property name="text">
          <string>Show action dialog when the browser closes</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item row="4" column="1">
+    <widget class="QPushButton" name="btnSave">
+     <property name="text">
+      <string>Save</string>
+     </property>
+    </widget>
+   </item>
+   <item row="4" column="0">
+    <spacer name="horizontalSpacer_2">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>40</width>
+       <height>20</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+   <item row="0" column="0" colspan="2">
+    <widget class="QGroupBox" name="portInfo">
+     <property name="title">
+      <string>Port information</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_4">
+      <item row="1" column="0">
+       <widget class="QLabel" name="lblControlCap">
+        <property name="text">
+         <string>ControlPort:</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0">
+       <widget class="QLabel" name="lblSocksCap">
+        <property name="text">
+         <string>SocksPort:</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="0">
+       <widget class="QLabel" name="lblHostCap">
+        <property name="text">
+         <string>Host:</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QLabel" name="lblHost">
+        <property name="text">
+         <string>TextLabel</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QLabel" name="lblControl">
+        <property name="text">
+         <string>TextLabel</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="1">
+       <widget class="QLabel" name="lblSocks">
+        <property name="text">
+         <string>TextLabel</string>
         </property>
        </widget>
       </item>

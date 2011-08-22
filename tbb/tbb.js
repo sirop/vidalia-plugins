@@ -22,6 +22,10 @@ var tbb = {
         this.browserProcess['finished(int, QProcess::ExitStatus)'].connect(this, this.onSubProcessFinished);
         this.proxyProcess['finished(int, QProcess::ExitStatus)'].connect(this, this.onSubProcessFinished);
 
+        this.host = "";
+        this.control_port = "";
+        this.socks_port = "";
+
         // Show a popup when tor's started so that users wait for the new
         // Firefox, so that they don't open a firefox themselves and think they
         // are using tor when they are not?
@@ -43,16 +47,22 @@ var tbb = {
         this.tab.setLayout(layout);
         file.close();
 
+        var portInfo = this.widget.children()[findWidget(this.widget, "portInfo")];
+        if(portInfo == null) {
+            return this.tab;
+        }
+
         var groupBox = this.widget.children()[findWidget(this.widget, "browserBox")];
         if(groupBox == null) {
             return this.tab;
         }
+
         var closeBox = this.widget.children()[findWidget(this.widget, "closeActionBox")];
         if(groupBox == null) {
             return this.tab;
         }
 
-        this.btnSave = groupBox.children()[findWidget(groupBox, "btnSave")];
+        this.btnSave = this.widget.children()[findWidget(this.widget, "btnSave")];
         if(this.btnSave != null) {
             this.btnSave["clicked()"].connect(this, this.saveSettings);
         }
@@ -86,17 +96,23 @@ var tbb = {
 
         this.chkShowDialog = closeBox.children()[findWidget(closeBox, "chkShowDialog")];
         if(this.chkShowDialog != null) {
-            if(!(!!this.tab.getSetting("DontShowCloseDialog", "false")))
+            if(this.tab.getSetting("DontShowCloseDialog", "false") != "true")
                 this.chkShowDialog.setCheckState(Qt.Checked);
         }
 
+        this.lblHost = portInfo.children()[findWidget(portInfo, "lblHost")];
+        this.lblHost.text = this.host;
+        this.lblControl = portInfo.children()[findWidget(portInfo, "lblControl")];
+        this.lblControl.text = this.control_port;
+        this.lblSocks = portInfo.children()[findWidget(portInfo, "lblSocks")];
+        this.lblSocks.text = this.socks_port;
         return this.tab;
     },
 
     saveSettings: function() {
         this.tab.saveSetting(this.BrowserExecutable, this.lineExecutable.text);
         this.tab.saveSetting(this.BrowserDirectory, this.lineDirectory.text);
-        this.tab.saveSetting("DontShowCloseDialog", String(this.chkShowDialog.checkState() == Qt.Checked));
+        this.tab.saveSetting("DontShowCloseDialog", String(this.chkShowDialog.checkState() != Qt.Checked));
     },
 
     onSubProcessFinished: function(exitCode, exitStatus) {
@@ -113,14 +129,9 @@ var tbb = {
                 vdebug("TBB@BrowserDirectory empty");
             }
             var dontshow = this.tab.getSetting("DontShowCloseDialog", "false");
-            vdebug("dontshow=");
-            vdebug(!!dontshow);
-            vdebug(typeof(!!dontshow));
-            if(!(!!dontshow)) { // I hate javascript
-                vdebug("ADENTRO");
+            if(dontshow != "true") { // I hate javascript
 	              this.showCloseDialog();
-            } else
-                vdebug("AFUERA");
+            }
         }
 
         this.btnLaunch.enabled = true;
@@ -155,7 +166,7 @@ var tbb = {
         //  /* Kill the browser and IM client if using the new launcher */
         //  VidaliaSettings vidalia_settings;
 
-        if (this.tab.getSetting(this.BrowserDirectory, "") != "") {
+        if(this.tab.getSetting(this.BrowserDirectory, "") != "") {
             //    /* Disconnect the finished signals so that we won't try to exit Vidalia again */
             //    QObject::disconnect(_browserProcess, SIGNAL(finished(int, QProcess::ExitStatus)), 0, 0);
             //    QObject::disconnect(_imProcess, SIGNAL(finished(int, QProcess::ExitStatus)), 0, 0);
@@ -179,13 +190,7 @@ var tbb = {
         var browserDirectoryFilename = this.tab.getSetting(this.BrowserExecutable, "");
         var browserDirectory = this.tab.getSetting(this.BrowserDirectory, "");
 
-        /* Set TZ=UTC (to stop leaking timezone information) and
-         * MOZ_NO_REMOTE=1 (to allow multiple instances of Firefox */
-        var newenv = this.browserProcess.systemEnvironment();
-        newenv.push("TZ=UTC");
-        newenv.push("MOZ_NO_REMOTE=1");
-
-        this.browserProcess.setEnvironment(newenv);
+        this.browserProcess.setEnvironment(this.updateBrowserEnv());
 
         var browserExecutable = QDir.toNativeSeparators(browserDirectory + "/App/Firefox/" + 
                                                         browserDirectoryFilename);
@@ -218,15 +223,12 @@ var tbb = {
     startSubProcess: function() {
         vdebug("TBB@startSubProcess");
 
-        vdebug("is it connected?");
         if(!torControl.isConnected())
             return;
-        vdebug("yes");
 
         while(!torControl.isCircuitEstablished()) {
             vdebug("Waiting on circuit established");
         }
-        vdebug("circuit established");
 
         var proxyExecutable = this.tab.getSetting(this.ProxyExecutable, "");
         var runAtStart = this.tab.getSetting(this.RunProxyAtStart, "");
@@ -243,10 +245,7 @@ var tbb = {
         if(browserDirectory != "") {
             this.launchBrowserFromDirectory();
         } else if(browserExecutable != "") {
-            var newenv = this.browserProcess.systemEnvironment();
-            newenv.push("TZ=UTC");
-
-            this.browserProcess.setEnvironment(newenv);
+            this.browserProcess.setEnvironment(this.updateBrowserEnv());
             this.browserProcess.start(browserExecutable, "-no-remote");
         }
 
@@ -312,7 +311,6 @@ var tbb = {
     },
 
     showCloseDialog: function() {
-        vdebug("before open the dialog");
         var file = new QFile(pluginPath+"/tbb/reopen.ui");
         var loader = new QUiLoader();
         file.open(QIODevice.ReadOnly);
@@ -354,7 +352,38 @@ var tbb = {
     },
 
     saveShowAgain: function(state) {
-        vdebug(state);
         this.tab.saveSetting("DontShowCloseDialog", String(state == 2));
+    },
+
+    updateBrowserEnv: function() {
+        vdebug("tbb@updateBrowserEnv");
+        /* Set TZ=UTC (to stop leaking timezone information) and
+         * MOZ_NO_REMOTE=1 (to allow multiple instances of Firefox */
+        var newenv = QProcessEnvironment.systemEnvironment();
+        newenv.insert("TZ", "UTC");
+        newenv.insert("MOZ_NO_REMOTE","1");
+
+        var control = String(torControl.getInfo("net/listeners/control"));
+        var socks = String(torControl.getInfo("net/listeners/socks"));
+
+        var control_list = control.split(":");
+        if(control_list.length < 2)
+            return newenv.toStringList();
+
+        this.host = control_list[0];
+        this.control_port = control_list[1].replace(",", "");
+
+        var socks_list = socks.split(":");
+        if(socks_list.length < 2)
+            return newenv.toStringList();
+
+        this.socks_port = socks_list[1].replace(",","");
+
+        newenv.insert("TOR_CONTROL_PORT", String(this.control_port));
+        newenv.insert("TOR_SOCKS_PORT", String(this.socks_port));
+
+        //vdebug(newenv.toStringList());
+
+        return newenv.toStringList();
     },
 };
