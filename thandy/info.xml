@@ -1,0 +1,10 @@
+<VidaliaPlugin>
+  <name>Thandy Configuration</name>
+  <date>29/10/2011</date>
+  <author>chiiph</author>
+  <type persistent="true" gui="true" />
+  <files>
+    <file>thandy.js</file>
+  </files>
+  <namespace>thandy</namespace>
+</VidaliaPlugin>
