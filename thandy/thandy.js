@@ -6,10 +6,13 @@ importExtension("qt.uitools");
 var thandy = {
     start: function() {
 		    vdebug("Thandy@start");
-        this.tab = new VidaliaTab("Thandy Configuration", "Thandy"); // We need this to access the settings later
+        this.tab = null;
+        this.tab = this.buildGUI();
         this.thandyProcess = new QProcess();
         this.ts = new QTextStream(this.thandyProcess);
         this.timer = new QTimer();
+
+        this.load();
 
         this.timer.start(1*1000*60);
         this.timer['timeout()'].connect(this, this.doCheck);
@@ -19,6 +22,18 @@ var thandy = {
 
         this.checkToggle = false;
         this.checking = false;
+    },
+
+    load: function() {
+        this.chkPeriodicallyCheck.setCheckState((this.tab.getSetting("PeriodicallyCheck", "true") == "true")?Qt.Checked:Qt.Unchecked);
+        this.spnMin.value = this.tab.getSetting("CheckInterval", 1);
+        this.chkDownload.setCheckState((this.tab.getSetting("Download", "true") == "true")?Qt.Checked:Qt.Unchecked);
+    },
+
+    save: function() {
+        this.tab.saveSetting("PeriodicallyCheck", (this.chkPeriodicallyCheck.checkState()==Qt.Checked)?"true":"false");
+        this.tab.saveSetting("Download", (this.chkDownload.checkState()==Qt.Checked)?"true":"false");
+        this.tab.saveSetting("CheckInterval", this.spnMin.value);
     },
 
     doCheck: function() {
@@ -56,6 +71,9 @@ var thandy = {
 
     buildGUI: function() {
         vdebug("Thandy@buildGUI");
+        if(this.tab != null)
+            return this.tab;
+
         // Load the GUI file
         this.tab = new VidaliaTab("Browser Bundle Settings", "TBB");
 
@@ -68,12 +86,26 @@ var thandy = {
         this.tab.setLayout(layout);
         file.close();
 
-        var portInfo = this.widget.children()[findWidget(this.widget, "portInfo")];
-        if(portInfo == null) {
-            return this.tab;
-        }
+        var grpActions = this.widget.children()[findWidget(this.widget, "grpActions")];
+        this.btnCheck = grpActions.children()[findWidget(grpActions, "btnCheck")];
+
+        var grpInterval = this.widget.children()[findWidget(this.widget, "grpInterval")];
+        this.chkPeriodicallyCheck = grpInterval.children()[findWidget(grpInterval, "chkPeriodicallyCheck")];
+        this.spnMin = grpInterval.children()[findWidget(grpInterval, "spnMin")];
+
+        var grpUpdate = this.widget.children()[findWidget(this.widget, "grpUpdate")];
+        this.chkDownload = grpInterval.children()[findWidget(grpUpdate, "chkDownload")];
+
+        this.btnSave = this.widget.children()[findWidget(this.widget, "btnSave")];
+
+        this.chkPeriodicallyCheck['stateChanged(int)'].connect(this, this.onChkPeriodicallyCheck);
+        this.btnSave['clicked()'].connect(this, this.save);
 
         return this.tab;
+    },
+
+    onChkPeriodicallyCheck: function(state) {
+
     },
 
     stop: function() {
