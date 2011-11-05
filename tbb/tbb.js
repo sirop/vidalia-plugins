@@ -218,6 +218,7 @@ var tbb = {
 
         /* Launch the browser */
         this.browserProcess.start(browserExecutable, commandLine);
+        this.browserProcess.toForeground()
     },
 
     startSubProcess: function() {
@@ -228,16 +229,17 @@ var tbb = {
 
         while(!torControl.isCircuitEstablished()) {
             vdebug("Waiting on circuit established");
+            sleep(1); // sleep 1s
         }
 
         var proxyExecutable = this.tab.getSetting(this.ProxyExecutable, "");
         var runAtStart = this.tab.getSetting(this.RunProxyAtStart, "");
         var proxyExecutableArguments = this.tab.getSetting(this.ProxyExecutableArguments, "");
 
-        if(runAtStart) {
-            vdebug("TBB@starting proxy");
-            this.proxyProcess.start(proxyExecutable, proxyExecutableArguments);
-        }
+        // if(runAtStart) {
+        //     vdebug("TBB@starting proxy");
+        //     this.proxyProcess.start(proxyExecutable, proxyExecutableArguments);
+        // }
 
         var browserExecutable = this.tab.getSetting(this.BrowserExecutable, "");
         var browserDirectory = this.tab.getSetting(this.BrowserDirectory, "");
@@ -247,6 +249,7 @@ var tbb = {
         } else if(browserExecutable != "") {
             this.browserProcess.setEnvironment(this.updateBrowserEnv());
             this.browserProcess.start(browserExecutable, "-no-remote");
+            this.browserProcess.toForeground();
         }
 
         this.btnLaunch.enabled = false;
