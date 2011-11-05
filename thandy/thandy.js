@@ -14,16 +14,16 @@ var thandy = {
 
         this.load();
 
-        // this.timer.start(1*1000*60);
-        // this.timer['timeout()'].connect(this, this.doCheck);
-        this.doCheck();
+        this.timer.start(1*1000*60);
+        this.timer['timeout()'].connect(this, this.doCheck);
+        // this.doCheck();
 
         this.thandyProcess['readyReadStandardOutput()'].connect(this, this.checkStdin);
         this.thandyProcess['finished(int, QProcess::ExitStatus)'].connect(this, this.onFinished);
 
-        // this.checkToggle = false;
         this.checking = false;
         this.forceDownload = false;
+        this.ready_bundles = [];
     },
 
     load: function() {
@@ -45,10 +45,6 @@ var thandy = {
         if(this.checking)
             return;
 
-        // this.checkToggle = !this.checkToggle;
-        // if(!this.checkToggle)
-        //     return;
-
         this.checking = true;
         
         var params = ["--datadir", this.dataDir, "--check"]
@@ -64,14 +60,24 @@ var thandy = {
     },
 
     closeAndUpdate: function() {
-        var params = ["--datadir", this.dataDir, "--wait", "5"]
+        vdebug("Thandy@closeAndUpdate");
+        var params = ["--datadir", this.dataDir];
+        if(this.ready_bundles.indexOf("Vidalia Bundle"))
+            params.concat(["--wait", "5"]);
         vdebug(this.updaterPath, params);
         QProcess.startDetached(this.updaterPath + " " + params.join(" "));
-        vidaliaApp.quit();
+        if(this.ready_bundles.indexOf("Vidalia Bundle"))
+            vidaliaApp.quit();
     },
 
     onFinished: function(exitCode, exitStatus) {
         vdebug("Thandy@onFinished");
+        for(var i = 0; i<this.ready_bundles.length; i++)
+            vdebug(this.ready_bundles[i]);
+        if(this.ready_bundles.length > 0)
+            this.doUpdate(this.ready_bundles.toString());
+        this.ready_bundles = [];
+
         this.checking = false;
         this.forceDownload = false;
     },
@@ -82,26 +88,44 @@ var thandy = {
             return "";
         
         if(parts[0] == what) {
+            parts.shift();
+            parts = parts.join(" ");
             var found = false;
-            var ind = 1;
             while(!found) {
-                if(ind > parts.length)
-                    break;
-                found = parts[ind].indexOf("=") != -1;
+                found = parts.indexOf("=") != -1;
                 if(found) {
                     break;
                 } else {
-                    ind++;
                     continue;
                 }
             }
             if(!found)
                 return "";
-            var name = parts[ind].split("=");
+            var name = parts.split("=");
             if(name.length != 2)
                 return "";
             if(name[0] == what_inside) {
-                return name[1];
+                found = false;
+                bquote = -1;
+                equote = -1;
+                var i = 0;
+                while(!found) {
+                    if(i > name[1].length)
+                        break;
+                    if(name[1].charAt(i) == '\"') {
+                        if(bquote == -1) {
+                            bquote = i;
+                        } else {
+                            equote = i;
+                            found = true;
+                        }
+                    }
+                    i++;
+                }
+                if(bquote == -1 || equote == -1)
+                    return "";
+                else
+                    return name[1].substring(bquote+1, equote);
             }
         }
         return "";
@@ -116,14 +140,14 @@ var thandy = {
         }
         // Ask whether to update things or not
         // If we are ready to update
-        var file = this.parseInteresting("READY", "BUNDLE", msg);
-        if(file != "")
-            this.doUpdate(file);
+        var bundle = this.parseInteresting("READY", "BUNDLE", msg);
+        if(bundle != "")
+            this.ready_bundles = this.ready_bundles.concat([bundle]);
     },
     
     doUpdate: function(name) {
         var ret = QMessageBox.question(0, "Do you want to update this bundle?",
-                                   "The following bundle has an uptade: \n" + name + "\nDo you want to proceed?",
+                                   "The following bundles have an uptade: \n" + name + "\nDo you want to proceed?",
                                    QMessageBox.StandardButtons(QMessageBox.Yes, QMessageBox.No));
         if(ret == QMessageBox.Yes) {
             this.closeAndUpdate();
