@@ -42,8 +42,11 @@ var thandy = {
         // BootstrapUpdateParams = update,--controller-log-format,--install,/bundleinfo/bootstrapper/
         // VidaliaBundle = "Vidalia Bundle"
         // BootstrapBundle = "Bootstrapper"
+        // TorBundle = "Tor"
+        // FirefoxBundle = "Firefox"
         // ThpDbRoot = ""
         // ThpInstallRoot = ""
+        // RestartCmd = ../rel/path/to/app
         this.chkPeriodicallyCheck.setCheckState((this.tab.getSetting("PeriodicallyCheck", "true") == "true")?Qt.Checked:Qt.Unchecked);
         this.spnMin.value = this.tab.getSetting("CheckInterval", 1);
         this.chkDownload.setCheckState((this.tab.getSetting("Download", "true") == "true")?Qt.Checked:Qt.Unchecked);
@@ -53,8 +56,11 @@ var thandy = {
         this.bootstrapUpdateParams = this.tab.getSetting("BootstrapUpdateParams", "").toString().split(",");
         this.vidaliaBundle = this.tab.getSetting("VidaliaBundle", "Vidalia Bundle");
         this.bootstrapBundle = this.tab.getSetting("BootstrapBundle", "Bootstrap");
+        this.torBundle = this.tab.getSetting("TorBundle", "Tor");
+        this.firefoxBundle = this.tab.getSetting("FirefoxBundle", "Firefox");
         this.thpDbRoot = this.tab.getSetting("ThpDbRoot", "");
         this.thpInstallRoot = this.tab.getSetting("ThpInstallRoot", "");
+        this.restartCmd = this.tab.getSetting("RestartCmd", "");
     },
 
     save: function() {
@@ -93,7 +99,36 @@ var thandy = {
         vdebug("Thandy@closeAndUpdate");
         var params = ["--datadir", this.dataDir];
         if(this.ready_bundles.indexOf(this.vidaliaBundle) != -1)
-            params = params.concat(["--wait", "5"]);
+            params = params.concat(["--wait", "5", "--restartcmd", "\""+this.restartCmd.replace("$vidalia_dir",QCoreApplication.applicationDirPath())+"\""]);
+
+        // If there's a tbb, then we need to check for firefox
+        var running_apps = "";
+        var firefox = false;
+        var tor = false;
+        if(typeof(tbb) == "object") {
+            if((tbb.browserProcess.state() != QProcess.NotRunning) &&
+               (this.ready_bundles.indexOf(this.firefoxBundle) != -1)) {
+                firefox = true;
+                running_apps = "Firefox";
+            }
+        }
+        
+        if(torControl.isRunning() && (this.ready_bundles.indexOf(this.torBundle) != -1)) {
+            tor = true;
+            running_apps = running_apps + ", Tor";
+        }
+
+        if(this.running_apps.length > 0) {
+            var ret = QMessageBox.question(0, "Applications are still running",
+                                           "The following applications are still running and have to update: \n" + running_apps + "\nThey need to be stopped. Do you want to proceed?",
+                                           QMessageBox.StandardButtons(QMessageBox.Yes, QMessageBox.No));
+            if(ret == QMessageBox.Yes) {
+                if(firefox)
+                    tbb.browserProcess.terminate();
+                if(tor)
+                    torControl.stop();
+            }
+        }
 
         if(this.ready_bundles.indexOf(this.bootstrapBundle) != -1) {
             this.ready_bundles.splice(this.ready_bundles.indexOf(this.bootstrapBundle), 1);
