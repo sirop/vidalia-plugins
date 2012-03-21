@@ -88,7 +88,7 @@ var tbb = {
         if(this.lineExecutable != null) {
             this.lineExecutable.text = this.tab.getSetting(this.BrowserExecutable, "");
         }
-        
+
         this.lineDirectory = groupBox.children()[findWidget(groupBox, "lineDirectory")];
         if(this.lineDirectory != null) {
             this.lineDirectory.text = this.tab.getSetting(this.BrowserDirectory, "");
@@ -120,7 +120,7 @@ var tbb = {
         var browserExecutable = this.tab.getSetting(this.BrowserExecutable, "").toString();
         var browserDirectory = this.tab.getSetting(this.BrowserDirectory, "").toString();
 
-        var browserDone = (browserExecutable == "" && browserDirectory == "") 
+        var browserDone = (browserExecutable == "" && browserDirectory == "")
             || this.browserProcess.isDone();
 
         if (browserDone) {
@@ -181,7 +181,7 @@ var tbb = {
             //#endif
 
             //    if (_imProcess->state() == QProcess::Running)
-            //      _imProcess->terminate();    
+            //      _imProcess->terminate();
         }
     },
 
@@ -192,7 +192,7 @@ var tbb = {
 
         this.browserProcess.setEnvironment(this.updateBrowserEnv());
 
-        var browserExecutable = QDir.toNativeSeparators(browserDirectory + "/App/Firefox/" + 
+        var browserExecutable = QDir.toNativeSeparators(browserDirectory + "/App/Firefox/" +
                                                         browserDirectoryFilename);
 
         var profileDir = QDir.toNativeSeparators(browserDirectory + "/Data/profile");
@@ -260,7 +260,7 @@ var tbb = {
         vdebug("TBB@copy_dir("+source+","+dest+")");
         var src = new QDir(source);
         var dst = new QDir(dest);
-        
+
         /* Get contents of the directory */
         var contents = src.entryInfoList();
 
@@ -272,7 +272,7 @@ var tbb = {
             var fileName = fileInfo.fileName();
             if(fileName == "." || fileName == "..")
                 continue;
-            
+
             var srcFilePath = src.absoluteFilePath(fileName);
             var dstFilePath = dst.absoluteFilePath(fileName);
 
@@ -286,12 +286,12 @@ var tbb = {
                 /* This is a file, copy it */
                 if (!QFile.copy(srcFilePath, dstFilePath))
                     return false;
-            } 
+            }
             /* Ignore special files (e.g. symlinks, devices) */
         }
         return true;
     },
-    
+
     showDirDialog: function() {
         print("tbb@showDirDialog");
         this.lineDirectory.text = QFileDialog.getExistingDirectory(this, "Choose a directory...", "/", QFileDialog.ShowDirsOnly);
@@ -304,11 +304,10 @@ var tbb = {
 
     showWaitDialog: function() {
         if(QSystemTrayIcon.supportsMessages()) {
-			      var tray = new QSystemTrayIcon();
-			      tray.show();
-            tray.showMessage("Remember", 
-                             "Please wait a few seconds, a Tor enabled Firefox will start right away...", 
-                             QSystemTrayIcon.Warning, 40000);
+			      VidaliaMainWindow.
+                trayMessage("Remember",
+                            "Please wait a few seconds, a Tor enabled Firefox will start right away...",
+                            QSystemTrayIcon.Warning, 40000);
         } else
             vdebug("Doesn't support messages!");
     },
