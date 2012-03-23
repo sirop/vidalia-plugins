@@ -6,6 +6,10 @@ importExtension("qt.uitools");
 var tbb = {
     BrowserExecutable: "BrowserExecutable",
     BrowserDirectory: "BrowserDirectory",
+    DefaultProfileDirectory: "DefaultProfileDirectory",
+    ProfileDirectory: "ProfileDirectory",
+    DefaultPluginsDirectory: "DefaultPluginsDirectory",
+    PluginsDirectory: "PluginsDirectory",
     //  We don't want polipo anymore?
     //  ProxyExecutable: "ProxyExecutable",
     //  RunProxyAtStart: "RunProxyAtStart",
@@ -187,27 +191,44 @@ var tbb = {
 
     launchBrowserFromDirectory: function() {
         vdebug("TBB@launchBrowserFromDirectory");
-        var browserDirectoryFilename = this.tab.getSetting(this.BrowserExecutable, "");
+        /** Directory for the browser */
         var browserDirectory = this.tab.getSetting(this.BrowserDirectory, "");
+        if(QDir(browserDirectory).isRelative())
+            browserDirectory = QDir.toNativeSeparators(QCoreApplication.applicationDirPath()
+                                                       + "/" + browserDirectory);
+
+        /** Relative path to the browser executable from the browserDirectory */
+        var browserExecutable = QDir.toNativeSeparators(browserDirectory + "/" +
+                                                        this.tab.getSetting(this.BrowserExecutable, ""));
+
+        /** Relative path to profile from the browserDirectory */
+        var profileDirectory = QDir.toNativeSeparators(this.tab.getSetting(this.ProfileDirectory, ""));
+        /** Default profile to copy from */
+        var defaultProfileDirectory = QDir.toNativeSeparators(this.tab.getSetting(this.DefaultProfileDirectory, ""));
+
+        /** Relative path to the plugins directory from the browserDirectory */
+        var pluginsDirectory = QDir.toNativeSeparators(this.tab.getSetting(this.PluginsDirectory, ""));
+        /** Relative path to the default plugins directory from the browserDirectory */
+        var defaultPluginsDirectory = QDir.toNativeSeparators(this.tab.getSetting(this.DefaultPluginsDirectory, ""));
+
+        var profileDir = browserDirectory + "/" + profileDirectory;
 
         this.browserProcess.setEnvironment(this.updateBrowserEnv());
 
-        var browserExecutable = QDir.toNativeSeparators(browserDirectory + "/App/Firefox/" +
-                                                        browserDirectoryFilename);
-
-        var profileDir = QDir.toNativeSeparators(browserDirectory + "/Data/profile");
         var browserDirObj = new QDir(browserDirectory);
 
         /* Copy the profile directory if it's not already there */
-        if(!browserDirObj.exists("Data/profile")) {
-            browserDirObj.mkpath("Data/profile");
-            this.copy_dir(browserDirectory + "/App/DefaultData/profile", browserDirectory + "/Data/profile");
+        if (!browserDirObj.exists(profileDirectory)) {
+            browserDirObj.mkdir(profileDirectory);
+            this.copy_dir(browserDirectory + "/" + defaultProfileDirectory,
+                     browserDirectory + "/" + profileDirectory);
         }
 
         /* Copy the plugins directory if it's not already there */
-        if (!browserDirObj.exists("Data/plugins")) {
-            browserDirObj.mkpath("Data/plugins");
-            this.copy_dir(browserDirectory + "/App/DefaultData/plugins", browserDirectory + "/Data/plugins");
+        if (!browserDirObj.exists(pluginsDirectory)) {
+            browserDirObj.mkdir(pluginsDirectory);
+            this.copy_dir(browserDirectory + "/" + defaultPluginsDirectory,
+                          browserDirectory + "/" + pluginsDirectory);
         }
 
         /* Build the command line arguments */
@@ -229,7 +250,8 @@ var tbb = {
 
         while(!torControl.isCircuitEstablished()) {
             vdebug("Waiting on circuit established");
-            sleep(1); // sleep 1s
+            //sleep(1); // sleep 1s
+            QCoreApplication.processEvents();
         }
 
         var proxyExecutable = this.tab.getSetting(this.ProxyExecutable, "");
