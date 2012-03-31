@@ -66,6 +66,11 @@ var tbb = {
             return this.tab;
         }
 
+        var trayBox = this.widget.children()[findWidget(this.widget, "TrayShowBox")];
+        if(groupBox == null) {
+            return this.tab;
+        }
+
         this.btnSave = this.widget.children()[findWidget(this.widget, "btnSave")];
         if(this.btnSave != null) {
             this.btnSave["clicked()"].connect(this, this.saveSettings);
@@ -104,6 +109,12 @@ var tbb = {
                 this.chkShowDialog.setCheckState(Qt.Checked);
         }
 
+        this.chkTrayShow = trayBox.children()[findWidget(trayBox, "chkTrayShow")];
+        if(this.chkTrayShow != null) {
+            if(this.tab.getSetting("DontShowTrayBox", "false") != "true")
+                this.chkTrayShow.setCheckState(Qt.Checked);
+        }
+
         this.lblHost = portInfo.children()[findWidget(portInfo, "lblHost")];
         this.lblHost.text = this.host;
         this.lblControl = portInfo.children()[findWidget(portInfo, "lblControl")];
@@ -117,6 +128,7 @@ var tbb = {
         this.tab.saveSetting(this.BrowserExecutable, this.lineExecutable.text);
         this.tab.saveSetting(this.BrowserDirectory, this.lineDirectory.text);
         this.tab.saveSetting("DontShowCloseDialog", String(this.chkShowDialog.checkState() != Qt.Checked));
+        this.tab.saveSetting("DontShowTrayBox", String(this.chkTrayShow.checkState() != Qt.Checked));
     },
 
     onSubProcessFinished: function(exitCode, exitStatus) {
@@ -134,7 +146,7 @@ var tbb = {
             }
             var dontshow = this.tab.getSetting("DontShowCloseDialog", "false");
             if(dontshow != "true") { // I hate javascript
-	              this.showCloseDialog();
+                this.showCloseDialog();
             }
         }
 
@@ -325,13 +337,22 @@ var tbb = {
     },
 
     showWaitDialog: function() {
-        if(QSystemTrayIcon.supportsMessages()) {
-			      VidaliaMainWindow.
-                trayMessage("Remember",
-                            "Please wait a few seconds, a Tor enabled Firefox will start right away...",
-                            QSystemTrayIcon.Warning, 40000);
-        } else
-            vdebug("Doesn't support messages!");
+        if (this.chkTrayShow.checkState() == Qt.Checked) {
+            if(QSystemTrayIcon.supportsMessages()) {
+               if (this.browserProcess.state() == QProcess.Running) {
+                   VidaliaMainWindow.
+                       trayMessage("Notification",
+                                   "Firefox is already running. If the Tor network is reestablished, feel free to surf.",
+                                   QSystemTrayIcon.Warning, 40000);
+               } else {
+                  VidaliaMainWindow.
+                      trayMessage("Remember",
+                                  "Please wait a few seconds, a Tor enabled Firefox will start right away...",
+                                  QSystemTrayIcon.Warning, 40000);
+               }
+            } else
+               vdebug("Doesn't support messages!");
+        }
     },
 
     showCloseDialog: function() {
